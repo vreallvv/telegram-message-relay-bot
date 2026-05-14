@@ -1,62 +1,49 @@
 # Telegram Message Relay Bot
 
-Бот принимает сообщения от пользователей, спрашивает подтверждение отправки и передает сообщение владельцу. Владелец отвечает пользователю через reply на полученное сообщение.
+Бот принимает сообщения от пользователей, спрашивает подтверждение и передает сообщение владельцу. Владелец отвечает пользователю через reply.
 
-## Возможности
+## Запуск На BotHost
 
-- подтверждение отправки через кнопки `Да` / `Нет`;
-- скрытая передача сообщений без Telegram-пересылки от пользователя;
-- ответы пользователю в формате `<b>Ответ:</b>`;
-- premium emoji через команду `/setemoji`;
-- локальный запуск через polling;
-- запуск на Vercel через Telegram webhook.
-
-## Emoji Slots
-
-Команда доступна владельцу бота:
-
-```text
-/setemoji 1 emoji - перед «Сообщение отправлено.»
-/setemoji 2 emoji - перед «Отправить это сообщение владельцу?»
-/setemoji 3 emoji - на кнопке «Да»
-/setemoji 4 emoji - на кнопке «Нет»
-/setemoji 5 emoji - перед «Ответ:»
-```
-
-## Local Run
-
-Создайте `.env` по примеру `.env.example`:
+Переменные окружения:
 
 ```env
-BOT_TOKEN=your_token
+BOT_TOKEN=токен_бота_из_BotFather
 OWNER_ID=1641958543
 DB_PATH=bot_messages.db
 ```
 
-Установите зависимости и запустите:
+Команда запуска:
 
-```powershell
-pip install -r requirements.txt
+```bash
 python main.py
 ```
 
-## Vercel Deploy
+Файл зависимостей:
 
-На Vercel добавьте Environment Variables:
-
-```env
-BOT_TOKEN=your_token
-OWNER_ID=1641958543
-DATABASE_URL=postgresql://...
+```bash
+pip install -r requirements.txt
 ```
 
-Для Vercel нужна внешняя PostgreSQL-база: Neon, Supabase, Vercel Postgres или аналог. Локальный SQLite-файл не подходит для постоянного хранения на serverless-хостинге.
+Если BotHost просит выбрать главный файл, укажите:
 
-После деплоя установите webhook:
-
-```powershell
-$env:WEBHOOK_URL="https://your-project.vercel.app/api/webhook"
-python .\scripts\set_webhook.py
+```text
+main.py
 ```
 
-Когда бот работает на Vercel, не запускайте локальный `python main.py`, иначе polling и webhook будут конфликтовать.
+Бот работает через polling, поэтому webhook в Telegram не нужен.
+
+## Команды Владельца
+
+```text
+/setemoji 1 premium_emoji - перед «Сообщение отправлено.»
+/setemoji 2 premium_emoji - перед «Отправить это сообщение владельцу?»
+/setemoji 3 premium_emoji - на кнопке «Да»
+/setemoji 4 premium_emoji - на кнопке «Нет»
+/setemoji 5 premium_emoji - перед «Ответ:»
+/setemoji 6 premium_emoji - перед приветствием
+/setemoji 7 premium_emoji - перед сообщением блокировки
+/setemoji 8 premium_emoji - перед админ-сообщением бана
+/setemoji 9 premium_emoji - перед админ-сообщением разбана
+/ban @username
+/unban @username
+```
