@@ -1,6 +1,7 @@
 import json
 import os
 import sqlite3
+import tempfile
 from typing import Any
 
 from aiogram import Bot, Dispatcher, F
@@ -48,7 +49,11 @@ class Storage:
 
             self.conn = psycopg.connect(DATABASE_URL)
         else:
-            self.conn = sqlite3.connect(DB_PATH, check_same_thread=False)
+            db_path = DB_PATH
+            if os.getenv("VERCEL") and not os.path.isabs(db_path):
+                db_path = os.path.join(tempfile.gettempdir(), db_path)
+
+            self.conn = sqlite3.connect(db_path, check_same_thread=False)
 
         self.init_schema()
 
