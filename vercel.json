@@ -1,0 +1,17 @@
+{
+  "functions": {
+    "api/index.py": {
+      "runtime": "python3.12"
+    }
+  },
+  "routes": [
+    {
+      "src": "/api/webhook",
+      "dest": "/api/index.py"
+    },
+    {
+      "src": "/api",
+      "dest": "/api/index.py"
+    }
+  ]
+}
