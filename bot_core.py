@@ -158,22 +158,18 @@ def pop_pending_message(user_id: int) -> dict | None:
 
 
 def confirmation_keyboard() -> InlineKeyboardMarkup:
-    return InlineKeyboardMarkup(
-        inline_keyboard=[
-            [
-                InlineKeyboardButton(
-                    text="Да",
-                    callback_data="confirm_send_yes",
-                    icon_custom_emoji_id=get_setting("yes_button_emoji_id"),
-                ),
-                InlineKeyboardButton(
-                    text="Нет",
-                    callback_data="confirm_send_no",
-                    icon_custom_emoji_id=get_setting("no_button_emoji_id"),
-                ),
-            ]
-        ]
-    )
+    yes_button = InlineKeyboardButton(text="Да", callback_data="confirm_send_yes")
+    no_button = InlineKeyboardButton(text="Нет", callback_data="confirm_send_no")
+
+    yes_emoji_id = get_setting("yes_button_emoji_id")
+    no_emoji_id = get_setting("no_button_emoji_id")
+
+    if yes_emoji_id:
+        yes_button.icon_custom_emoji_id = yes_emoji_id
+    if no_emoji_id:
+        no_button.icon_custom_emoji_id = no_emoji_id
+
+    return InlineKeyboardMarkup(inline_keyboard=[[yes_button, no_button]])
 
 
 def get_entity_type(entity) -> str:

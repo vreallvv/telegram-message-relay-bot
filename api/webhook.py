@@ -1,5 +1,6 @@
 import asyncio
 import json
+import traceback
 from http.server import BaseHTTPRequestHandler
 
 from aiogram.types import Update
@@ -21,12 +22,13 @@ class handler(BaseHTTPRequestHandler):
         try:
             update = Update.model_validate(json.loads(raw_body))
             asyncio.run(dp.feed_update(bot, update))
-            self.send_response(200)
-            self.send_header("Content-Type", "application/json")
-            self.end_headers()
-            self.wfile.write(b'{"ok": true}')
         except Exception as exc:
-            self.send_response(500)
-            self.send_header("Content-Type", "application/json")
-            self.end_headers()
-            self.wfile.write(json.dumps({"ok": False, "error": str(exc)}).encode("utf-8"))
+            traceback.print_exc()
+            body = {"ok": False, "error": str(exc)}
+        else:
+            body = {"ok": True}
+
+        self.send_response(200)
+        self.send_header("Content-Type", "application/json")
+        self.end_headers()
+        self.wfile.write(json.dumps(body).encode("utf-8"))
