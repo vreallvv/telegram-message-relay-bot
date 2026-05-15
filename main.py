@@ -305,21 +305,28 @@ def english_start_text(username: str) -> str:
     return f"{emoji} {greeting}" if emoji else greeting
 
 
+def safe_html_caption(message: Message) -> str | None:
+    if not message.caption:
+        return None
+
+    return html_decoration.quote(message.caption)
+
+
 def build_payload(message: Message) -> dict:
     if message.text:
         return {"type": "text", "text": message.html_text}
     if message.photo:
-        return {"type": "photo", "file_id": message.photo[-1].file_id, "caption": message.html_caption}
+        return {"type": "photo", "file_id": message.photo[-1].file_id, "caption": safe_html_caption(message)}
     if message.video:
-        return {"type": "video", "file_id": message.video.file_id, "caption": message.html_caption}
+        return {"type": "video", "file_id": message.video.file_id, "caption": safe_html_caption(message)}
     if message.animation:
-        return {"type": "animation", "file_id": message.animation.file_id, "caption": message.html_caption}
+        return {"type": "animation", "file_id": message.animation.file_id, "caption": safe_html_caption(message)}
     if message.voice:
-        return {"type": "voice", "file_id": message.voice.file_id, "caption": message.html_caption}
+        return {"type": "voice", "file_id": message.voice.file_id, "caption": safe_html_caption(message)}
     if message.audio:
-        return {"type": "audio", "file_id": message.audio.file_id, "caption": message.html_caption}
+        return {"type": "audio", "file_id": message.audio.file_id, "caption": safe_html_caption(message)}
     if message.document:
-        return {"type": "document", "file_id": message.document.file_id, "caption": message.html_caption}
+        return {"type": "document", "file_id": message.document.file_id, "caption": safe_html_caption(message)}
     if message.sticker:
         return {"type": "sticker", "file_id": message.sticker.file_id}
     if message.video_note:
@@ -332,6 +339,13 @@ async def send_payload(chat_id: int, payload: dict) -> Message:
 
     if payload_type == "text":
         return await bot.send_message(chat_id, payload["text"])
+
+    caption = payload.get("caption")
+    if caption and len(caption) > 1000:
+        await bot.send_message(chat_id, caption)
+        payload = payload.copy()
+        payload["caption"] = None
+
     if payload_type == "photo":
         return await bot.send_photo(chat_id, payload["file_id"], caption=payload.get("caption"))
     if payload_type == "video":
