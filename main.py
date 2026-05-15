@@ -258,6 +258,17 @@ def confirmation_keyboard(language: str = "ru") -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(inline_keyboard=[[yes_button, no_button]])
 
 
+def owner_moderation_keyboard(user_id: int) -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(text="Ban", callback_data=f"owner_ban_{user_id}"),
+                InlineKeyboardButton(text="Unban", callback_data=f"owner_unban_{user_id}"),
+            ]
+        ]
+    )
+
+
 def start_language_keyboard() -> InlineKeyboardMarkup:
     button = InlineKeyboardButton(text="English", callback_data="start_lang_en")
     emoji_id = get_setting("english_button_emoji_id")
@@ -464,9 +475,25 @@ async def send_user_message_to_owner(payload: dict, user_info: dict, user_messag
     sent = await send_payload(OWNER_ID, payload)
     user_id = user_info["id"]
     save_message_link(sent.message_id, user_id, user_message_id)
+    try:
+        await bot.edit_message_reply_markup(
+            chat_id=OWNER_ID,
+            message_id=sent.message_id,
+            reply_markup=owner_moderation_keyboard(user_id),
+        )
+    except Exception:
+        pass
 
     if header:
         save_message_link(header.message_id, user_id, user_message_id)
+        try:
+            await bot.edit_message_reply_markup(
+                chat_id=OWNER_ID,
+                message_id=header.message_id,
+                reply_markup=owner_moderation_keyboard(user_id),
+            )
+        except Exception:
+            pass
 
 
 @dp.message(Command("start"))
@@ -707,6 +734,30 @@ async def reply_command(message: Message) -> None:
         await message.answer("Ответ отправлен.")
     except Exception as exc:
         await message.answer(f"Не удалось отправить ответ: {hcode(str(exc))}")
+
+
+@dp.callback_query(F.data.startswith("owner_ban_"))
+async def owner_ban_callback(call: CallbackQuery) -> None:
+    if call.from_user.id != OWNER_ID:
+        await call.answer()
+        return
+
+    target_user_id = int(call.data.removeprefix("owner_ban_"))
+    ban_user(target_user_id)
+    await call.answer("Заблокирован", show_alert=True)
+    await call.message.answer(admin_ban_text(user_display_by_id(target_user_id)))
+
+
+@dp.callback_query(F.data.startswith("owner_unban_"))
+async def owner_unban_callback(call: CallbackQuery) -> None:
+    if call.from_user.id != OWNER_ID:
+        await call.answer()
+        return
+
+    target_user_id = int(call.data.removeprefix("owner_unban_"))
+    unban_user(target_user_id)
+    await call.answer("Разблокирован", show_alert=True)
+    await call.message.answer(admin_unban_text(user_display_by_id(target_user_id)))
 
 
 @dp.message(F.from_user.id == OWNER_ID)
