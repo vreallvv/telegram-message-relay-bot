@@ -208,6 +208,15 @@ def is_banned(user_id: int) -> bool:
     return fetchone("SELECT user_id FROM banned_users WHERE user_id = ?", (user_id,)) is not None
 
 
+def user_display_by_id(user_id: int) -> str:
+    row = fetchone("SELECT username, full_name FROM users WHERE user_id = ?", (user_id,))
+    if row and row[0]:
+        return f"@{row[0]}"
+    if row and row[1]:
+        return str(row[1])
+    return str(user_id)
+
+
 def save_pending_message(user_id: int, data: dict) -> None:
     execute(
         "INSERT OR REPLACE INTO pending_messages (user_id, data) VALUES (?, ?)",
@@ -593,9 +602,19 @@ async def ban_command(message: Message) -> None:
     if not message.from_user or message.from_user.id != OWNER_ID:
         return
 
+    if message.reply_to_message:
+        target_user_id = get_user_by_owner_message(message.reply_to_message.message_id)
+        if target_user_id is None:
+            await message.answer("Не нашел пользователя для этого сообщения.")
+            return
+
+        ban_user(target_user_id)
+        await message.answer(admin_ban_text(user_display_by_id(target_user_id)))
+        return
+
     parts = (message.text or "").split(maxsplit=1)
     if len(parts) < 2:
-        await message.answer("Использование: /ban @username")
+        await message.answer("Использование: /ban @username или reply командой /ban на сообщение пользователя")
         return
 
     username = parts[1].strip()
@@ -615,9 +634,19 @@ async def unban_command(message: Message) -> None:
     if not message.from_user or message.from_user.id != OWNER_ID:
         return
 
+    if message.reply_to_message:
+        target_user_id = get_user_by_owner_message(message.reply_to_message.message_id)
+        if target_user_id is None:
+            await message.answer("Не нашел пользователя для этого сообщения.")
+            return
+
+        unban_user(target_user_id)
+        await message.answer(admin_unban_text(user_display_by_id(target_user_id)))
+        return
+
     parts = (message.text or "").split(maxsplit=1)
     if len(parts) < 2:
-        await message.answer("Использование: /unban @username")
+        await message.answer("Использование: /unban @username или reply командой /unban на сообщение пользователя")
         return
 
     username = parts[1].strip()
@@ -628,6 +657,45 @@ async def unban_command(message: Message) -> None:
 
     unban_user(target_user_id)
     await message.answer(admin_unban_text(username))
+
+
+@dp.message(Command("reply"))
+async def reply_command(message: Message) -> None:
+    remember_user(message)
+
+    if not message.from_user or message.from_user.id != OWNER_ID:
+        return
+
+    parts = (message.text or "").split(maxsplit=1)
+    if len(parts) < 2 or not parts[1].strip():
+        await message.answer("Использование: /reply @username текст")
+        return
+
+    reply_text = parts[1].strip()
+
+    if not reply_text.startswith("@"):
+        await message.answer("Использование: /reply @username текст")
+        return
+
+    username_parts = reply_text.split(maxsplit=1)
+    if len(username_parts) < 2 or not username_parts[1].strip():
+        await message.answer("Использование: /reply @username текст")
+        return
+
+    target_user_id = find_user_id_by_username(username_parts[0])
+    if target_user_id is None:
+        await message.answer("Я еще не знаю такого пользователя. Он должен хотя бы раз написать боту.")
+        return
+
+    reply_text = username_parts[1].strip()
+    text = html_decoration.quote(reply_text)
+    payload = {"type": "text", "text": text}
+
+    try:
+        await send_payload(target_user_id, with_answer_prefix(payload, get_user_language(target_user_id)))
+        await message.answer("Ответ отправлен.")
+    except Exception as exc:
+        await message.answer(f"Не удалось отправить ответ: {hcode(str(exc))}")
 
 
 @dp.message(F.from_user.id == OWNER_ID)
