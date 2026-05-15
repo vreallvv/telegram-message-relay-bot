@@ -1,6 +1,7 @@
 import asyncio
 import json
 import os
+import re
 import sqlite3
 from typing import Any
 
@@ -146,6 +147,16 @@ def save_message_link(owner_message_id: int, user_id: int, user_message_id: int 
 def get_user_by_owner_message(owner_message_id: int) -> int | None:
     row = fetchone("SELECT user_id FROM message_links WHERE owner_message_id = ?", (owner_message_id,))
     return int(row[0]) if row else None
+
+
+def get_user_id_from_owner_reply(reply_message: Message) -> int | None:
+    user_id = get_user_by_owner_message(reply_message.message_id)
+    if user_id is not None:
+        return user_id
+
+    text = reply_message.text or reply_message.caption or ""
+    match = re.search(r"\((\d{5,})\)", text)
+    return int(match.group(1)) if match else None
 
 
 def set_setting(key: str, value: str) -> None:
@@ -603,7 +614,7 @@ async def ban_command(message: Message) -> None:
         return
 
     if message.reply_to_message:
-        target_user_id = get_user_by_owner_message(message.reply_to_message.message_id)
+        target_user_id = get_user_id_from_owner_reply(message.reply_to_message)
         if target_user_id is None:
             await message.answer("Не нашел пользователя для этого сообщения.")
             return
@@ -635,7 +646,7 @@ async def unban_command(message: Message) -> None:
         return
 
     if message.reply_to_message:
-        target_user_id = get_user_by_owner_message(message.reply_to_message.message_id)
+        target_user_id = get_user_id_from_owner_reply(message.reply_to_message)
         if target_user_id is None:
             await message.answer("Не нашел пользователя для этого сообщения.")
             return
@@ -706,7 +717,7 @@ async def handle_owner_message(message: Message) -> None:
         await message.answer("Чтобы ответить пользователю, сделайте reply на его сообщение.")
         return
 
-    target_user_id = get_user_by_owner_message(message.reply_to_message.message_id)
+    target_user_id = get_user_id_from_owner_reply(message.reply_to_message)
     if target_user_id is None:
         await message.answer("Не нашел пользователя для этого сообщения.")
         return
