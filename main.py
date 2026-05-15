@@ -213,17 +213,27 @@ def confirmation_keyboard(language: str = "ru") -> InlineKeyboardMarkup:
 
 
 def start_language_keyboard() -> InlineKeyboardMarkup:
+    button = InlineKeyboardButton(text="English", callback_data="start_lang_en")
+    emoji_id = get_setting("english_button_emoji_id")
+    if emoji_id:
+        button.icon_custom_emoji_id = emoji_id
+
     return InlineKeyboardMarkup(
         inline_keyboard=[
-            [InlineKeyboardButton(text="🇬🇧 English", callback_data="start_lang_en")]
+            [button]
         ]
     )
 
 
 def start_russian_keyboard() -> InlineKeyboardMarkup:
+    button = InlineKeyboardButton(text="Русский", callback_data="start_lang_ru")
+    emoji_id = get_setting("russian_button_emoji_id")
+    if emoji_id:
+        button.icon_custom_emoji_id = emoji_id
+
     return InlineKeyboardMarkup(
         inline_keyboard=[
-            [InlineKeyboardButton(text="🇷🇺 Русский", callback_data="start_lang_ru")]
+            [button]
         ]
     )
 
@@ -505,6 +515,16 @@ async def set_emoji(message: Message) -> None:
             "description": "перед админ-сообщением «Пользователь разблокирован»",
             "preview": lambda: admin_unban_text("@username"),
         },
+        "10": {
+            "prefix": "english_button",
+            "description": "на кнопке «English»",
+            "preview": lambda: "English",
+        },
+        "11": {
+            "prefix": "russian_button",
+            "description": "на кнопке «Русский»",
+            "preview": lambda: "Русский",
+        },
     }
 
     if len(parts) < 2 or parts[1] not in emoji_slots:
@@ -518,7 +538,9 @@ async def set_emoji(message: Message) -> None:
             "/setemoji 6 премиум-эмодзи - перед «Здравствуй...»\n"
             "/setemoji 7 премиум-эмодзи - перед «Вы заблокированны»\n"
             "/setemoji 8 премиум-эмодзи - перед «Пользователь заблокирован»\n"
-            "/setemoji 9 премиум-эмодзи - перед «Пользователь разблокирован»"
+            "/setemoji 9 премиум-эмодзи - перед «Пользователь разблокирован»\n"
+            "/setemoji 10 премиум-эмодзи - на кнопке «English»\n"
+            "/setemoji 11 премиум-эмодзи - на кнопке «Русский»"
         )
         return
 
