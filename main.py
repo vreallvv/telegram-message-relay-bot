@@ -36,6 +36,32 @@ if not API_TOKEN:
     raise RuntimeError("Не задан BOT_TOKEN. Укажите токен бота в .env или переменной BOT_TOKEN.")
 
 
+DEFAULT_SETTINGS = {
+    "sent_emoji_id": "5870984130560266604",
+    "sent_emoji_text": "💬",
+    "confirm_emoji_id": "6030848053177486888",
+    "confirm_emoji_text": "❓",
+    "yes_button_emoji_id": "5870633910337015697",
+    "yes_button_emoji_text": "✅",
+    "no_button_emoji_id": "5870657884844462243",
+    "no_button_emoji_text": "❌",
+    "answer_emoji_id": "6030622631818956594",
+    "answer_emoji_text": "💬",
+    "start_ru_emoji_id": "5472055112702629499",
+    "start_ru_emoji_text": "👋",
+    "blocked_emoji_id": "5240241223632954241",
+    "blocked_emoji_text": "🚫",
+    "admin_ban_emoji_id": "5240241223632954241",
+    "admin_ban_emoji_text": "🚫",
+    "admin_unban_emoji_id": "5206607081334906820",
+    "admin_unban_emoji_text": "✔️",
+    "english_button_emoji_id": "5202021044105257611",
+    "english_button_emoji_text": "🇺🇸",
+    "russian_button_emoji_id": "5449408995691341691",
+    "russian_button_emoji_text": "🇷🇺",
+}
+
+
 bot = Bot(token=API_TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
 dp = Dispatcher()
 
@@ -128,7 +154,7 @@ def set_setting(key: str, value: str) -> None:
 
 def get_setting(key: str) -> str | None:
     row = fetchone("SELECT value FROM settings WHERE key = ?", (key,))
-    return str(row[0]) if row else None
+    return str(row[0]) if row else DEFAULT_SETTINGS.get(key)
 
 
 def set_user_language(user_id: int, language: str) -> None:
